@@ -1,31 +1,37 @@
 const axios = require('axios');
 
 async function initialize(BOT_ID) {
-    await axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
+    /*await axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
         status: 0,
         progress: 0
     }).then(() => {
         console.log("Bot " + BOT_ID + " : Initialization Completed !");
-    });
+    });*/
+
+    console.log("Bot " + BOT_ID + " : Initialization Completed !");
 }
 
 function updateProgress(BOT_ID, progress) {
     switch (progress) {
         case 100:
-            axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
+            /*axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
                 status: 0,
                 progress: 100
             }).then(() => {
                 console.log("Bot " + BOT_ID + " : Operation Completed !");
-            });
+            });*/
+
+            console.log("Bot " + BOT_ID + " : Operation Completed !");
             break;
         default:
-            axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
+            /*axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
                 status: 1,
                 progress: progress
             }).then(() => {
                 console.log("Bot " + BOT_ID + " : " + progress + "%");
-            });
+            });*/
+
+            console.log("Bot " + BOT_ID + " : " + progress + "%");
             break;
     }
 }
@@ -41,8 +47,7 @@ function formatName(name) {
 }
 
 function formatGenres(genresString) {
-    let genres;
-    return genres = genresString.toLowerCase().split(", ");
+    return genresString.toLowerCase().split(", ");
 }
 
 function getTypeId(type) {
@@ -66,7 +71,7 @@ function getTypeId(type) {
 
 async function addManga(name, synopsis, genres, type_id, chapter_numbers, site_id, site_link, cover_link) {
     if (isNumeric(chapter_numbers)) {
-        await axios.post("https://www.api.azonar.fr/mangas", {
+        /*await axios.post("https://www.api.azonar.fr/mangas", {
             name: name,
             synopsis: synopsis,
             genres: genres,
@@ -77,22 +82,26 @@ async function addManga(name, synopsis, genres, type_id, chapter_numbers, site_i
             cover_link: cover_link
         }).then(() => {
             console.log("New Manga Added : " + name);
-        });
+        });*/
+
+        console.log("New Manga Added : " + name);
     }
 }
 
 async function updateManga(manga_id, chapter_numbers, site_id) {
     if (isNumeric(chapter_numbers)) {
-        await axios.put("https://www.api.azonar.fr/mangas/chapter/" + manga_id, {
+        /*await axios.put("https://www.api.azonar.fr/mangas/chapter/" + manga_id, {
             chapter_number: chapter_numbers,
             site_id: site_id
         }).then(() => {
             console.log("New Chapter Added : " + name);
-        });
+        });*/
+
+        console.log("New Chapter Added : " + name);
     }
 }
 
-function calculProgress(step, total, current, botName) {
+function calcProgress(step, total, current, botName) {
     let global_progress
     if (step === 1) {
         const js_progress = ((parseFloat(current) / parseFloat(total)) * 100).toFixed(0);
@@ -115,4 +124,4 @@ module.exports.formatGenres = formatGenres;
 module.exports.getTypeId = getTypeId;
 module.exports.addManga = addManga;
 module.exports.updateManga = updateManga;
-module.exports.calculProgress = calculProgress;
+module.exports.calcProgress = calcProgress;

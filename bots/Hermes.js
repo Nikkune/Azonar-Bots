@@ -102,7 +102,7 @@ async function start() {
             }
             await browserTwo.close();
         }
-        await commonFunctions.updateProgress(BOT_ID, commonFunctions.calculProgress(1, page_number, index_js, "Hermes"));
+        await commonFunctions.updateProgress(BOT_ID, commonFunctions.calProgress(1, page_number, index_js, "Hermes"));
         index_js++;
     }
 
@@ -252,7 +252,7 @@ async function start() {
                 }
             }
             await browserTwo.close();
-            await commonFunctions.updateProgress(BOT_ID, commonFunctions.calculProgress(2, number_of_manga, manga, "Hermes"));
+            await commonFunctions.updateProgress(BOT_ID, commonFunctions.calcProgress(2, number_of_manga, manga, "Hermes"));
             manga++;
         }
     }
