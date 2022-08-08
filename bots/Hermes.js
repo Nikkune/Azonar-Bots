@@ -38,12 +38,14 @@ async function start() {
     await page.goto("https://www.japscan.ws/mangas/", {waitUntil: "networkidle0"});
     const page_number = await page.$eval(".pagination.d-flex.justify-content-center", element => element.lastElementChild.firstElementChild.textContent);
 
-    let index_js = 1;
+    let index_js = 332;
     while (index_js <= page_number) {
         await page.goto("https://www.japscan.ws/mangas/" + index_js, {waitUntil: "networkidle0"});
         const mangas_holder = await page.$$(".d-flex.flex-wrap.m-5 div.p-2");
 
         for (const mangasHolderElement of mangas_holder) {
+            let err = false;
+
             const synopsis_link = await mangasHolderElement.evaluate(element => element.firstElementChild.href);
 
             // noinspection JSCheckFunctionSignatures
@@ -53,58 +55,81 @@ async function start() {
 
             await pageTwo.goto(synopsis_link, {waitUntil: "networkidle0"});
 
-            const main = await pageTwo.$("#main");
-            const infos_holder = await main.$$("div.card div.rounded-0.card-body div.d-flex div.m-2 p.mb-2");
+            let main = await pageTwo.$("#main");
+            while (main === null) {
+                await pageTwo.goto(synopsis_link, {waitUntil: "networkidle0"});
+                main = await pageTwo.$("#main");
+            }
+            const infos_holder = await main.$$("div.card div.rounded-0.card-body div.d-flex div.m-2 p.mb-2").catch((er) => {
+                if (er) {
+                    err = true
+                }
+            });
 
             const typeAndName = await main.evaluate(element => element.firstElementChild.firstElementChild.firstElementChild.textContent);
             const type = typeAndName.split(" ")[0];
             const name = typeAndName.substring(type.length + 1);
 
             if (!mangas_names.includes(commonFunctions.formatName(name))) {
-                const type_id = commonFunctions.getTypeId(type);
+                const type_id = commonFunctions.getTypeId(type.toLowerCase());
                 const site_link = synopsis_link;
+                let synopsis;
 
+                console.log(synopsis_link);
                 const cover_link = await main.evaluate(element => element.firstElementChild.firstElementChild.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.firstElementChild.firstElementChild.src);
-                const synopsis = await main.evaluate(element => element.firstElementChild.firstElementChild.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent);
+                if ((await main.evaluate(element => element.firstElementChild.firstElementChild.lastElementChild.previousElementSibling.textContent)).includes("Synopsis:"))
+                    synopsis = await main.evaluate(element => element.firstElementChild.firstElementChild.firstElementChild.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.textContent);
+                else synopsis = "A Venir..."
+                console.log(synopsis);
 
                 let chapter_numbers = await pageTwo.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
                 chapter_numbers = chapter_numbers.split('/')[5];
                 if (!commonFunctions.isNumeric(chapter_numbers))
                     chapter_numbers = chapter_numbers.split('-')[1];
+                console.log(chapter_numbers);
 
                 let genres = "";
-                for (const infosHolderElement of infos_holder) {
-                    genres = await infosHolderElement.evaluate(element => element.innerText)
-                    if (genres.startsWith("Genre(s):"))
-                        break;
-                }
-                if (!genres.startsWith("Genre(s):"))
+                if (!err) {
+                    for (const infosHolderElement of infos_holder) {
+                        genres = await infosHolderElement.evaluate(element => element.innerText)
+                        if (genres.startsWith("Genre(s):"))
+                            break;
+                    }
+                    if (!genres.startsWith("Genre(s):"))
+                        genres = "none";
+                    else
+                        genres = genres.substring(10);
+                } else
                     genres = "none";
-                else
-                    genres = genres.substring(10);
                 genres = commonFunctions.formatGenres(genres);
+                console.log(genres);
 
                 await commonFunctions.addManga(name, synopsis, genres, type_id, chapter_numbers, 1, site_link, cover_link);
             } else {
                 const manga_id = mangas_ids[commonFunctions.formatName(name)];
+                const site_link = synopsis_link;
 
                 let chapter_numbers = await pageTwo.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
                 chapter_numbers = chapter_numbers.split('/')[5];
                 if (!commonFunctions.isNumeric(chapter_numbers))
                     chapter_numbers = chapter_numbers.split('-')[1];
+                if (parseFloat(chapter_numbers) === 0)
+                    chapter_numbers = "1";
 
                 if (mangas_chapter_numbers[commonFunctions.formatName(name)] !== null) {
                     if (mangas_chapter_numbers[commonFunctions.formatName(name)].toString() !== chapter_numbers)
-                        await commonFunctions.updateManga(manga_id, chapter_numbers, 1);
+                        await commonFunctions.updateManga(manga_id, name, site_link, chapter_numbers, 1);
                 } else {
-                    await commonFunctions.updateManga(manga_id, chapter_numbers, 1);
+                    await commonFunctions.updateManga(manga_id, name, site_link, chapter_numbers, 1);
                 }
             }
             await browserTwo.close();
         }
-        await commonFunctions.updateProgress(BOT_ID, commonFunctions.calProgress(1, page_number, index_js, "Hermes"));
+        await commonFunctions.updateProgress(BOT_ID, commonFunctions.calcProgress(1, page_number, index_js, "Hermes"));
         index_js++;
     }
+
+    await loadMangas();
 
     let mangasOriginesIsUp = true;
 
@@ -116,8 +141,9 @@ async function start() {
 
     let click = 0;
     while (click < click_number) {
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(2000);
         const button = await page.$('#navigation-ajax');
+        mangasOriginesIsUp = click >= 20;
         if (!await button.evaluate(element => element.classList.contains("show-loading"))) {
             try {
                 await page.click('#navigation-ajax');
@@ -125,13 +151,12 @@ async function start() {
                 console.log(click);
             } catch (e) {
                 click = click_number;
-                mangasOriginesIsUp = false;
             }
         } else {
             click = click_number;
-            mangasOriginesIsUp = false;
         }
     }
+
     if (mangasOriginesIsUp) {
         const all_mangas_infos = await page.$$(".item-summary");
 
@@ -139,15 +164,28 @@ async function start() {
         const number_of_manga = all_mangas_infos.length + manga;
 
         for (const manga_info of all_mangas_infos) {
+            let err = false;
+
             const synopsis_link = await manga_info.evaluate(element => element.firstElementChild.firstElementChild.lastElementChild.href);
 
+            console.log(synopsis_link);
             // noinspection JSCheckFunctionSignatures
             const browserTwo = await puppeteer.launch(getPuppeteerOptions());
             const pageTwo = await browserTwo.newPage();
             await pageTwo.setDefaultNavigationTimeout(0);
 
             await pageTwo.goto(synopsis_link, {waitUntil: "networkidle2"});
-            await pageTwo.waitForSelector(".fc-button.fc-cta-consent.fc-primary-button");
+            await pageTwo.waitForSelector(".fc-button.fc-cta-consent.fc-primary-button").catch((e) => {
+                if (e) {
+                    err = true
+                }
+            });
+            if (err) {
+                manga++;
+                await browserTwo.close()
+                continue;
+            }
+
             await pageTwo.click(".fc-button.fc-cta-consent.fc-primary-button");
 
             const name = await pageTwo.$eval('div.post-title', element => element.lastElementChild.innerText);
@@ -171,6 +209,7 @@ async function start() {
                 }
                 genres = commonFunctions.formatGenres(genres);
                 if (genres.includes("hentai")) {
+                    manga++;
                     await browserTwo.close();
                     continue;
                 }
@@ -194,7 +233,11 @@ async function start() {
                         await browserTwo.close();
                         continue;
                     }
-                } else continue;
+                } else {
+                    manga++;
+                    await browserTwo.close();
+                    continue;
+                }
 
                 let type = "";
                 let type_id = 0;
@@ -202,25 +245,16 @@ async function start() {
                     type = await infosHolderElement.evaluate(element => element.firstElementChild.firstElementChild.innerText);
                     if (type.startsWith(" Type")) {
                         type = (await infosHolderElement.evaluate(element => element.lastElementChild.innerText)).toLowerCase().split(", ");
-                        if (type.includes("manhwa"))
-                            type_id = 4;
-                        else if (type.includes("manhua"))
-                            type_id = 3;
-                        else if (type.includes("novel"))
-                            type_id = 2;
-                        else if (type.includes("manga"))
+                        type_id = commonFunctions.getTypeId(type.toLowerCase());
+                        if (type_id === 0)
                             type_id = 1;
-                        else if (type.includes("webtoon") || type.includes("webcomic"))
-                            type_id = 5;
-                        else
-                            type_id = 1;
-                        break;
                     } else type = "none";
                 }
 
                 await commonFunctions.addManga(name, synopsis, genres, type_id, chapter_numbers, 2, site_link, cover_link);
             } else {
                 const manga_id = mangas_ids[commonFunctions.formatName(name)];
+                const site_link = synopsis_link;
 
                 const exists = await pageTwo.$eval("#manga-chapters-holder", () => true).catch(() => false);
 
@@ -246,9 +280,9 @@ async function start() {
 
                 if (mangas_chapter_numbers[commonFunctions.formatName(name)] !== null) {
                     if (mangas_chapter_numbers[commonFunctions.formatName(name)].toString() !== new_chapter_number)
-                        await commonFunctions.updateManga(manga_id, new_chapter_number, 2);
+                        await commonFunctions.updateManga(manga_id, name, site_link, new_chapter_number, 2);
                 } else {
-                    await commonFunctions.updateManga(manga_id, new_chapter_number, 2);
+                    await commonFunctions.updateManga(manga_id, name, site_link, new_chapter_number, 2);
                 }
             }
             await browserTwo.close();
@@ -262,7 +296,7 @@ async function start() {
     console.timeEnd(BOT_NAME);
 }
 
-start();
+start()
 
 module.exports.start = start;
 module.exports.BOT_ID = BOT_ID;

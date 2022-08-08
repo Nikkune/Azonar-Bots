@@ -16,9 +16,9 @@ async function enable() {
     }, HestiaWaitTime);
 
     await Manager.launch(Hestia.BOT_ID);
-    await Manager.launch(Hermes);
+    await Manager.launch(Hermes.BOT_ID);
 }
 
-setPuppeteerOptions(false, false);
+setPuppeteerOptions(false, true);
 
 enable().then(() => console.log("Bots are enabled !"))

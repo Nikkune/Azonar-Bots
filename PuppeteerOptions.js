@@ -1,5 +1,5 @@
 let puppeteerOptions = {
-    headless: false
+    headless: true
 }
 
 function setPuppeteerOptions(linux, headless) {
