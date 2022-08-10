@@ -81,6 +81,9 @@ function getTypeId(type) {
         case "webcomic":
             type_id = 5;
             break;
+        case "bande dessinée":
+            type_id = 6;
+            break;
     }
     return type_id;
 }
