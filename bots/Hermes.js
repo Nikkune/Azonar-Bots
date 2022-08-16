@@ -71,6 +71,9 @@ async function start() {
             if (type === "Bande"){
                 type = "Bande Dessinée"
             }
+            if (type === "Global"){
+                type = "Global Manga"
+            }
             const name = typeAndName.substring(type.length + 1);
 
             if (!mangas_names.includes(commonFunctions.formatName(name))) {
@@ -89,7 +92,6 @@ async function start() {
                 chapter_numbers = chapter_numbers.split('/')[5];
                 if (!commonFunctions.isNumeric(chapter_numbers))
                     chapter_numbers = chapter_numbers.split('-')[1];
-                console.log(chapter_numbers);
 
                 let genres = "";
                 if (!err) {
@@ -120,7 +122,7 @@ async function start() {
                     chapter_numbers = "1";
 
                 if (mangas_chapter_numbers[commonFunctions.formatName(name)] !== null) {
-                    if (mangas_chapter_numbers[commonFunctions.formatName(name)].toString() !== chapter_numbers)
+                    if (parseFloat(mangas_chapter_numbers[commonFunctions.formatName(name)].toString()) < parseFloat(chapter_numbers))
                         await commonFunctions.updateManga(manga_id, name, site_link, chapter_numbers, 1);
                 } else {
                     await commonFunctions.updateManga(manga_id, name, site_link, chapter_numbers, 1);
@@ -195,7 +197,7 @@ async function start() {
             const site_link = synopsis_link;
 
             const synopsis = await main.evaluate(element => element.lastElementChild.firstElementChild.firstElementChild.lastElementChild.firstElementChild.innerText);
-            const cover_link = await main.evaluate(element => element.firstElementChild.firstElementChild.firstElementChild.lastElementChild.src);
+            let cover_link = await main.$eval("img", element=> element.src);
 
             let genres = "";
             for (const infosHolderElement of infos_holder) {
@@ -242,7 +244,7 @@ async function start() {
             for (const infosHolderElement of infos_holder) {
                 type = await infosHolderElement.evaluate(element => element.firstElementChild.firstElementChild.innerText);
                 if (type.startsWith(" Type")) {
-                    type = (await infosHolderElement.evaluate(element => element.lastElementChild.innerText)).toLowerCase().split(", ");
+                    type = (await infosHolderElement.evaluate(element => element.lastElementChild.innerText)).toLowerCase().split(", ")[0];
                     type_id = commonFunctions.getTypeId(type.toLowerCase());
                     if (type_id === 0)
                         type_id = 1;
@@ -277,7 +279,7 @@ async function start() {
                 new_chapter_number = 1;
 
             if (mangas_chapter_numbers[commonFunctions.formatName(name)] !== null) {
-                if (mangas_chapter_numbers[commonFunctions.formatName(name)].toString() !== new_chapter_number)
+                if (parseFloat(mangas_chapter_numbers[commonFunctions.formatName(name)].toString()) < parseFloat(new_chapter_number))
                     await commonFunctions.updateManga(manga_id, name, site_link, new_chapter_number, 2);
             } else {
                 await commonFunctions.updateManga(manga_id, name, site_link, new_chapter_number, 2);
@@ -292,8 +294,6 @@ async function start() {
     await commonFunctions.updateProgress(BOT_ID, 100);
     console.timeEnd(BOT_NAME);
 }
-
-start()
 
 module.exports.start = start;
 module.exports.BOT_ID = BOT_ID;

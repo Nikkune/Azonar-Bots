@@ -26,7 +26,7 @@ function updateProgress(BOT_ID, progress) {
                 status: 1,
                 progress: progress
             }).then(() => {
-                console.log("Bot " + BOT_ID + " : " + progress + "%");
+                console.log("Bot " + BOT_ID + " > " + progress + "%");
             });
             break;
     }
