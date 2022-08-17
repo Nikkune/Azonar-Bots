@@ -75,7 +75,5 @@ async function start() {
     return;
 }
 
-start()
-
 module.exports.start = start;
 module.exports.BOT_ID = BOT_ID;
