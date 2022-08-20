@@ -20,9 +20,11 @@ async function enable() {
         await Manager.launch(Zeus.BOT_ID);
     }, ZeusWaitTime);
 
+    await Manager.init();
+
     await Manager.launch(Hestia.BOT_ID);
-    await Manager.launch(Hermes.BOT_ID);
     await Manager.launch(Zeus.BOT_ID);
+    await Manager.launch(Hermes.BOT_ID);
 }
 
 setPuppeteerOptions(false, true);

@@ -1,35 +1,34 @@
 const axios = require('axios');
 
 async function initialize(BOT_ID) {
-    await axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
-        status: 0,
-        progress: 0
-    }).then(() => {
-        console.log("Bot " + BOT_ID + " : Initialization Completed !");
+    await getBotName(BOT_ID).then((name) => {
+        axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
+            status: 1,
+            progress: 0
+        }).then(() => {
+            console.log("Bot " + name + " > Initialization Completed !");
+        });
     });
-
-    await console.log("Bot " + BOT_ID + " : Initialization Completed !");
 }
 
 function updateProgress(BOT_ID, progress) {
-    switch (progress) {
-        case 100:
+    getBotName(BOT_ID).then((name) => {
+        if (progress === 100) {
             axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
                 status: 0,
                 progress: 100
             }).then(() => {
-                console.log("Bot " + BOT_ID + " : Operation Completed !");
+                console.log("Bot " + name + " > Operation Completed !");
             });
-            break;
-        default:
+        } else {
             axios.put("https://www.api.azonar.fr/bots/progressAndStatus/" + BOT_ID, {
                 status: 1,
                 progress: progress
             }).then(() => {
-                console.log("Bot " + BOT_ID + " > " + progress + "%");
+                console.log("Bot " + name + " > Progression : " + progress + "%");
             });
-            break;
-    }
+        }
+    })
 }
 
 function isNumeric(str) {
@@ -48,13 +47,13 @@ function formatGenres(genresString) {
     const genres = [];
     const genresToFormat = genresString.toLowerCase().split(", ");
     let x = 0;
-    while (x !== genresEN.length){
-        if (genresToFormat.includes(genresFR[x]) || genresToFormat.includes(genresEN[x])){
+    while (x !== genresEN.length) {
+        if (genresToFormat.includes(genresFR[x]) || genresToFormat.includes(genresEN[x])) {
             genres.push(genresEN[x])
         }
         x++;
     }
-    if (genres.length === 0){
+    if (genres.length === 0) {
         genres.push("none");
     }
     return genres;
@@ -122,16 +121,28 @@ async function updateManga(manga_id, name, site_link, chapter_numbers, site_id) 
 function calcProgress(step, total, current, botName) {
     let global_progress
     if (step === 1) {
-        const js_progress = ((parseFloat(current) / parseFloat(total)) * 100).toFixed(0);
-        global_progress = ((parseFloat(js_progress) / 200) * 100).toFixed(1);
-        console.log(botName + "> Progress Japscan : " + current + "/" + total + "      " + js_progress + "%");
+        const js_progress = ((parseFloat(current) / parseFloat(total)) * 100).toFixed(2);
+        global_progress = ((parseFloat(js_progress) / 200) * 100).toFixed(2);
+        console.log(botName + "> Progression On Japscan : " + current + "/" + total + "      " + js_progress + "%");
     } else if (step === 2) {
-        const mo_progress = ((parseFloat(current) / parseFloat(total)) * 100).toFixed(0);
-        global_progress = (((parseFloat(mo_progress) + 100) / 200) * 100).toFixed(1);
-        console.log(botName + "> Progress Mangas Origines : " + current + "/" + total + "      " + mo_progress + "%");
+        const mo_progress = ((parseFloat(current) / parseFloat(total)) * 100).toFixed(2);
+        global_progress = (((parseFloat(mo_progress) + 100) / 200) * 100).toFixed(2);
+        console.log(botName + "> Progression On Mangas Origines : " + current + "/" + total + "      " + mo_progress + "%");
     }
-    console.log(botName + "> Progress : " + global_progress + "%");
+    console.log(botName + "> Progression : " + global_progress + "%");
     return global_progress;
+}
+
+async function getBotName(BOT_ID) {
+    let bot_name;
+    await axios.get("https://www.api.azonar.fr/bots/").then((res) => {
+        for (const datum of res.data) {
+            if (datum._id === BOT_ID) {
+                bot_name = datum.name
+            }
+        }
+    });
+    return bot_name;
 }
 
 module.exports.initialize = initialize;
@@ -143,3 +154,4 @@ module.exports.getTypeId = getTypeId;
 module.exports.addManga = addManga;
 module.exports.updateManga = updateManga;
 module.exports.calcProgress = calcProgress;
+module.exports.getBotName = getBotName;

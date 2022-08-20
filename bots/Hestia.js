@@ -31,12 +31,15 @@ async function start() {
         await page.goto(manga.site_link);
 
         let chapter_numbers
-        if (manga.site_id.toString() === "1") {
+        let site_id;
+        if (manga.site_link.split("/")[2] === "www.japscan.me") {
+            site_id = 1;
             chapter_numbers = await page.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
             chapter_numbers = chapter_numbers.split('/')[5];
             if (!commonFunctions.isNumeric(chapter_numbers))
                 chapter_numbers = chapter_numbers.split('-')[1];
-        } else if (manga.site_id.toString() === "2") {
+        } else if (manga.site_link.split("/")[2] === "mangas-origines.fr") {
+            site_id = 2;
             try {
                 chapter_numbers = await page.$eval("#manga-chapters-holder", element => element.lastElementChild.firstElementChild.firstElementChild.firstElementChild.getElementsByTagName("a")[0].href.split("/")[5].split("-"));
 
@@ -54,7 +57,7 @@ async function start() {
         }
 
         if (parseFloat(manga.chapter_number) < parseFloat(chapter_numbers))
-            await commonFunctions.updateManga(manga._id, manga.name, manga.site_link, chapter_numbers, manga.site_id);
+            await commonFunctions.updateManga(manga._id, manga.name, manga.site_link, chapter_numbers, site_id);
 
         if (lmanga.current_chapter < chapter_numbers) {
             await axios.put("https://www.api.azonar.fr/lists/read/" + lmanga.user_id, {
@@ -72,7 +75,6 @@ async function start() {
     }
     await commonFunctions.updateProgress(BOT_ID, 100);
     console.timeEnd(BOT_NAME);
-    return;
 }
 
 module.exports.start = start;
