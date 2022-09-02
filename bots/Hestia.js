@@ -34,7 +34,20 @@ async function start() {
         let site_id;
         if (manga.site_link.split("/")[2] === "www.japscan.me") {
             site_id = 1;
-            chapter_numbers = await page.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
+            try {
+                chapter_numbers = await page.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
+            }catch (e) {
+                let error = true;
+                while (error){
+                    try {
+                        await page.goto(manga.site_link);
+                        chapter_numbers = await page.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
+                        error = false;
+                    }catch (e) {
+                        error = true;
+                    }
+                }
+            }
             chapter_numbers = chapter_numbers.split('/')[5];
             if (!commonFunctions.isNumeric(chapter_numbers))
                 chapter_numbers = chapter_numbers.split('-')[1];

@@ -88,7 +88,21 @@ async function start() {
                 else synopsis = "A Venir..."
                 console.log(synopsis);
 
-                let chapter_numbers = await pageTwo.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
+                let chapter_numbers;
+                try {
+                    chapter_numbers = await page.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
+                }catch (e) {
+                    let error = true;
+                    while (error){
+                        try {
+                            await pageTwo.goto(synopsis_link, {waitUntil: "networkidle0"});
+                            chapter_numbers = await page.$eval("#collapse-1", element => element.firstElementChild.lastElementChild.href);
+                            error = false;
+                        }catch (e) {
+                            error = true;
+                        }
+                    }
+                }
                 chapter_numbers = chapter_numbers.split('/')[5];
                 if (!commonFunctions.isNumeric(chapter_numbers))
                     chapter_numbers = chapter_numbers.split('-')[1];
