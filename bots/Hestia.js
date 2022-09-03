@@ -7,6 +7,9 @@ const {getPuppeteerOptions} = require("../PuppeteerOptions");
 const BOT_ID = "62dc2d48ae6498aeaeaa95b9";
 const BOT_NAME = "Hestia";
 const Nikkune_ID = "62f253bcc45ec5684430d02e";
+
+const Ignore_Manga = ["Solo Leveling" ,"Isekai Meikyuu de Harem o"]
+
 console.time(BOT_NAME);
 
 puppeteer.use(StealthPlugin());
@@ -27,6 +30,8 @@ async function start() {
         const browser = await puppeteer.launch(getPuppeteerOptions());
         const page = await browser.newPage()
         await page.setDefaultNavigationTimeout(0);
+        if (Ignore_Manga.includes(manga.name))
+            continue;
 
         await page.goto(manga.site_link);
 
@@ -89,6 +94,8 @@ async function start() {
     await commonFunctions.updateProgress(BOT_ID, 100);
     console.timeEnd(BOT_NAME);
 }
+
+start()
 
 module.exports.start = start;
 module.exports.BOT_ID = BOT_ID;
